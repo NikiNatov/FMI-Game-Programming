@@ -1,20 +1,15 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class PlayerMovement : MonoBehaviour
 {
     [SerializeField]
-    private GameObject background;
-
-    [SerializeField]
-    private GameObject camera;
-
-    [SerializeField]
     private LayerMask layerMask;
 
-    [SerializeField]
-    private float jumpForce = 40.0f;
+    public float jumpForce = 40.0f;
+    public bool canDoubleJump = false;
 
     [SerializeField]
     private float movementSpeed = 10.0f;
@@ -25,48 +20,43 @@ public class PlayerMovement : MonoBehaviour
     private BoxCollider2D boxCollider;
     private Rigidbody2D rigidBody;
 
-    // Start is called before the first frame update
     void Start()
     {
         boxCollider = GetComponent<BoxCollider2D>();
         rigidBody = GetComponent<Rigidbody2D>();
     }
 
-    // Update is called once per frame
     void Update()
     {
         // Input
         HandleInput();
 
-        // Make the camera and the background sprite follow the player
-        camera.transform.position = new Vector3(transform.position.x, transform.position.y, -10.0f);
-        background.transform.position = new Vector3(transform.position.x, transform.position.y, 1.0f);
-
         // If the player falls its position is being reset
-        if (transform.position.y < -30.0f)
-            transform.position = new Vector3(0.0f, 0.0f);
+        if (transform.position.y < -10.0f)
+            SceneManager.LoadScene("GameOver");
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
         // If it is a moving platform make the player move with the platform
-        if(collision.gameObject.name == "MovingPlatform")
+        if (collision.gameObject.tag == "Platform")
             transform.parent = collision.gameObject.transform;
     }
 
     private void OnCollisionExit2D(Collision2D collision)
     {
         // Reset the parent transform so that the player no longer moves with the platform
-        if (collision.gameObject.name == "MovingPlatform")
+        if (collision.gameObject.name == "Platform")
             transform.parent = null;
     }
 
     private void HandleInput()
     {
-        if (IsOnGround() && Input.GetKeyDown(KeyCode.Space))
+        if (Input.GetKeyDown(KeyCode.Space))
         {
-            rigidBody.velocity = Vector3.up * jumpForce;
+            Jump();
         }
+
         if (Input.GetKey(KeyCode.A))
         {
             rigidBody.velocity = new Vector2(-movementSpeed, rigidBody.velocity.y);
@@ -89,11 +79,42 @@ public class PlayerMovement : MonoBehaviour
         {
             rigidBody.velocity = new Vector2(0, rigidBody.velocity.y);
         }
-    }
+
+        float speed = rigidBody.velocity.magnitude / 8.0f;
+        GetComponent<Animator>().SetFloat("speed", speed, 0.1f, Time.deltaTime);
+    }   
 
     private bool IsOnGround()
     {
         RaycastHit2D raycastHit2D = Physics2D.BoxCast(boxCollider.bounds.center, boxCollider.size, 0.0f, Vector3.down, 0.1f, layerMask);
         return raycastHit2D.collider != null;
+    }
+
+    public void Jump()
+    {
+        if(IsOnGround())
+        {
+            rigidBody.velocity = new Vector2(rigidBody.velocity.x, 0);
+            rigidBody.velocity = new Vector2(0, jumpForce);
+            canDoubleJump = true;
+        }
+        else
+        {
+            if (canDoubleJump)
+            {
+                canDoubleJump = false;
+                rigidBody.velocity = new Vector2(rigidBody.velocity.x, 0);
+                rigidBody.velocity = new Vector2(0, jumpForce);
+            }
+        }
+
+        GetComponent<Animator>().SetBool("jump", true);
+        StartCoroutine(JumpRoutine());
+    }
+
+    IEnumerator JumpRoutine()
+    {
+        yield return new WaitForSeconds(0.1f);
+        GetComponent<Animator>().SetBool("jump", false);
     }
 }

@@ -9,23 +9,26 @@ public class MovingPlatform : MonoBehaviour
     private float movementSpeed = 5.0f;
 
     private bool moveRight = false;
+    private float maxDistance = 6.0f;
+    private Vector3 startPos;
 
     // Start is called before the first frame update
     void Start()
     {
+        startPos = transform.position;
     }
 
     // Update is called once per frame
-    void Update()
+    void FixedUpdate()
     {
-        if (transform.position.x < 6.0f)
-            moveRight = true;
-        if (transform.position.x > 12.0f)
+        if (Vector3.Distance(transform.position, startPos) >= maxDistance && moveRight)
             moveRight = false;
+        else if (Vector3.Distance(transform.position, startPos) >= maxDistance && !moveRight)
+            moveRight = true;
 
         if(moveRight)
-            transform.position = new Vector3(transform.position.x + movementSpeed * Time.deltaTime, transform.position.y);
+            transform.position = new Vector3(transform.position.x + movementSpeed * Time.fixedDeltaTime, transform.position.y);
         else
-            transform.position = new Vector3(transform.position.x - movementSpeed * Time.deltaTime, transform.position.y);
+            transform.position = new Vector3(transform.position.x - movementSpeed * Time.fixedDeltaTime, transform.position.y);
     }
 }

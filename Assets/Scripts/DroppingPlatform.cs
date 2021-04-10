@@ -5,11 +5,20 @@ using UnityEngine;
 public class DroppingPlatform : MonoBehaviour
 {
     private Rigidbody2D rigidBody;
+    private Vector3 initialPosition;
+
+    public float respawnTime = 5.0f;
 
     // Start is called before the first frame update
     void Start()
     {
         rigidBody = GetComponent<Rigidbody2D>();
+        initialPosition = transform.position;
+    }
+
+    private void Awake()
+    {
+
     }
 
     // Update is called once per frame
@@ -23,7 +32,7 @@ public class DroppingPlatform : MonoBehaviour
         if (collision.gameObject.name == "Player")
         {
             Invoke("DropPlatform", 0.1f);
-            Destroy(gameObject, 2.0f);
+            Invoke("RespawnPlatform", respawnTime);
         }
     }
 
@@ -31,4 +40,11 @@ public class DroppingPlatform : MonoBehaviour
     {
         rigidBody.isKinematic = false;
     }
+
+    private void RespawnPlatform()
+    {
+        rigidBody.isKinematic = true;
+        rigidBody.velocity = Vector3.zero;
+        transform.position = initialPosition;
+    }    
 }
